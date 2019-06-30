@@ -8,7 +8,9 @@ urlpatterns = [
     path('doctors/', views.doctors_list, name='doctors'),
     # path('doctors/api-token-auth/', obtain_auth_token, name='api_token_auth'),
     path('doctors/signup/', views.doctors_signup, name='doctor-signup'),
-    path('patients/signup', views.patients_signup,  name='patient-signup'),
+    path('patients/signup/', views.patients_signup,  name='patient-signup'),
+    path('login/', views.member_login, name='login'),
+
 
     # path('patients/', ,name='patients'),
 ]

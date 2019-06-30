@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -9,7 +10,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 
 from base.models import Doctor
-from base.serializer import PatientSerializerSignup, DoctorSerializerSignup
+from base.serializer import PatientSerializerSignup, DoctorSerializerSignup, MemberSerializerLogin
 
 
 @api_view(['GET'])
@@ -45,6 +46,21 @@ def patients_signup(request, format=None):
     return JsonResponse(serializer.errors, status=400)
 
 
+@api_view(['POST'])
+def member_login(request, format=None):
+    data = JSONParser().parse(request)
+    serializer = MemberSerializerLogin(data=data)
+    if serializer.is_valid():
+        print("I am here!")
+        username = serializer.data['username']
+        password = serializer.data['password']
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse(serializer.data, status=201)
+        else:
+            return JsonResponse({"error": "We do not have this user!"}, status=404)
+    return JsonResponse(serializer.errors, status=400)
 
 
 

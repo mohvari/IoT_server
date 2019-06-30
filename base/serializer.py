@@ -10,7 +10,7 @@ class DoctorSerializerSignup(se.ModelSerializer):
                   'latitude', 'longitude', 'altitude')
 
 
-class UserSerializerLogin(se.ModelSerializer):
+class MemberSerializerLogin(se.ModelSerializer):
     class Meta:
         model = Member
         fields = ('username', 'password')
