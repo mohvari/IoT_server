@@ -1,3 +1,4 @@
+
 """IoT_Project URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -16,10 +17,13 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 from django.urls import path, include, base
+from rest_framework.response import Response
+from base import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('members/', include('base.urls')),
+    path("", views.home,name="home"),
     # url(r'^api-auth/', include('rest_framework.urls')),
 
 ]

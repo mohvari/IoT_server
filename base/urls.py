@@ -10,6 +10,9 @@ urlpatterns = [
     path('doctors/signup/', views.doctors_signup, name='doctor-signup'),
     path('patients/signup/', views.patients_signup,  name='patient-signup'),
     path('login/', views.member_login, name='login'),
+    path('api/loginview/', views.LoginView.as_view(), name="login-view-class"),
+    path('api/logoutview/', views.LogoutView.as_view(), name="logout-view-class"),
+    path('patients/change_condition/', views.change_state, name="change-condition"),
 
 
     # path('patients/', ,name='patients'),
