@@ -54,7 +54,9 @@ def member_login(request, format=None):
         print("I am here!")
         username = serializer.data['username']
         password = serializer.data['password']
+        print(username, password)
         user = authenticate(username=username, password=password)
+        print(user)
         if user is not None:
             login(request, user)
             return JsonResponse(serializer.data, status=201)
