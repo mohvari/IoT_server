@@ -22,8 +22,7 @@ from base import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('members/', include('base.urls')),
-    path("", views.home,name="home"),
-    # url(r'^api-auth/', include('rest_framework.urls')),
+    path('api/', include('base.urls')),
+    path("", views.home, name="home"),
 
 ]
