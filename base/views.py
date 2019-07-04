@@ -1,24 +1,26 @@
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
+import operator
+from math import cos, sin, acos, sqrt
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from rest_framework.views import APIView
-
 from .models import Member
 from django.contrib.auth import login as django_login, logout as django_logout
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
-
-# from base.models import Doctor
-from base.serializer import MemberSerializerSignup, LoginSerializer, ConditionChangeSerializer  \
-    # PatientSerializerSignup, DoctorSerializerSignup, MemberSerializerLogin
+from base.serializer import MemberSerializerSignup, LoginSerializer, ConditionChangeSerializer, LocationChangeSerializer
 
 
-def home(request):
-    Response("This is Home!")
+def home(request, format=None):
+    # query = Member.objects.all()
+    authentication_classes(TokenAuthentication, )
+    print(request.user)
+    if request.user:
+        return JsonResponse({"Hello": str(request.user.username)}, safe=True)
+    else:
+        return JsonResponse({"Please": "login First"}, safe=True)
 
 
 @api_view(['GET'])
@@ -95,11 +97,11 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    authentication_classes(TokenAuthentication, )
-
     def post(self, request):
+        authentication_classes(TokenAuthentication, )
+        print("log out", request.user)
         django_logout(request)
-        return redirect(reversed(""))
+        return redirect(reverse_lazy("home"))
         # return Response(status=204)
 
 
@@ -110,13 +112,49 @@ def change_condition(request, format=None):
     #     print('yes!')
     serializer = ConditionChangeSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    request.user.set_condition(state=serializer.data['condition'])
-    return JsonResponse({"Condition": request.user.bad_or_busy_condition},
+    member_set = list(Member.objects.filter(username=request.user.username))
+    member = member_set[0]
+    member.set_condition(state=serializer.data['condition'])
+    return JsonResponse({"Condition": member.bad_or_busy_condition},
                         safe=False)
 
 
+@api_view(['POST'])
+def change_location(request, format=None):
+    serializer = LocationChangeSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    member_qset = Member.objects.filter(username=request.user.username)
+    member = member_qset.first()
+    member.set_location(longitude=serializer.data['longitude'],
+                        latitude=serializer.data['latitude'],
+                        altitude=serializer.data['altitude'])
+    return JsonResponse({"Longitude": member.longitude,
+                         "Latitude": member.latitude,
+                         "Altitude": member.altitude})
 
 
 
+
+
+def find_distance(patient, doctor):
+    cos_tetha = sin(patient.latitude) * sin(doctor.latitude) + \
+            cos(patient.latitude) * cos(doctor.latitude) * cos(patient.longitude - doctor.longitude)
+    tetha = acos(cos_tetha)
+    distance = sqrt(patient.altitude**2 + doctor.altitude**2 -
+                    2 * patient.altitude * doctor.altitude * cos_tetha)
+    return distance
+
+
+@api_view(['POST'])
+def find_doctor(request, format=None):
+    patient_qset = Member.objects.filter(username=request.user.username)
+    patient = patient_qset.first()
+    doctors_distance = {}
+    doctors_list = list(Member.objects.filter(is_doctor=True))
+    for doctor in doctors_list:
+        doctors_distance.update({doctor.id: find_distance(patient, doctor)})
+
+    sorted_doctors = sorted(doctors_distance.items(), key=operator.itemgetter(1))
+    # ToDO: NOW WE SHOULD CALL THE DOCTORS
 
 

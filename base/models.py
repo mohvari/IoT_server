@@ -1,6 +1,7 @@
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+EARTH_R = 4800  # ToDo:
 
 # class Member(AbstractUser):
 
@@ -23,3 +24,10 @@ class Member(AbstractUser):
                 self.bad_or_busy_condition = True
             else:
                 self.bad_or_busy_condition = False
+        self.save()
+
+    def set_location(self, longitude, latitude, altitude):
+        self.longitude = longitude
+        self.latitude = latitude
+        self.altitude = altitude + EARTH_R
+        self.save()

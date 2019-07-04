@@ -47,7 +47,7 @@ class LoginSerializer(se.Serializer):
                     msg = 'user is deactivated!'
                     raise (exceptions.ValidationError(msg))
             else:
-                print("user is" , user)
+                print("user is", user)
                 msg = "Username or Password is Wrong!"
                 raise (exceptions.ValidationError(msg))
         else:
@@ -59,6 +59,12 @@ class LoginSerializer(se.Serializer):
 
 class ConditionChangeSerializer(se.Serializer):
     condition = se.CharField(max_length=5)
+
+
+class LocationChangeSerializer(se.Serializer):
+    longitude = se.FloatField()
+    latitude = se.FloatField()
+    altitude = se.FloatField()
 
 
 
