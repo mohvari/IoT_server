@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-EARTH_R = 4800  # ToDo:
+EARTH_R = 6378000  # radius of the Earth
 
 # class Member(AbstractUser):
 
@@ -12,6 +12,7 @@ class Member(AbstractUser):
     longitude = models.FloatField(default=0.0)
     latitude = models.FloatField(default=0.0)
     altitude = models.FloatField(default=0.0)
+    assigned_member_id = models.IntegerField(null=True)
 
     def set_condition(self, state):
         if self.is_doctor:

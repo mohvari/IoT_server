@@ -19,6 +19,14 @@ class MemberSerializerSignup(se.ModelSerializer):
                   'is_doctor', 'bad_or_busy_condition')
 
 
+class MemberSerializerList(se.ModelSerializer):
+    class Meta:
+        model = Member
+        fields = ('id', 'first_name', 'last_name', 'username', 'password', 'email',
+                  'is_doctor', 'bad_or_busy_condition', 'latitude', 'longitude', 'altitude',
+                  'assigned_member_id')
+
+
 # class MemberSerializerLogin(se.Serializer):
 #     username = se.CharField(max_length=128)
 #     password = se.CharField(max_length=256)

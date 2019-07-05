@@ -10,7 +10,8 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.authtoken.models import Token
-from base.serializer import MemberSerializerSignup, LoginSerializer, ConditionChangeSerializer, LocationChangeSerializer
+from base.serializer import MemberSerializerSignup, LoginSerializer, ConditionChangeSerializer, \
+    LocationChangeSerializer, MemberSerializerList
 
 
 def home(request, format=None):
@@ -30,7 +31,7 @@ def members_list(request, format=None):
     """
     if request.method == 'GET':
         snippets = Member.objects.all()
-        serializer = MemberSerializerSignup(snippets, many=True)  # Todo: Have to Change the serializer!
+        serializer = MemberSerializerList(snippets, many=True)  # Todo: Change the serializer => add Token
         return JsonResponse(serializer.data, safe=False)
 
 
@@ -107,9 +108,6 @@ class LogoutView(APIView):
 
 @api_view(['POST'])
 def change_condition(request, format=None):
-    # data = JSONParser().parse(request)
-    # if request.user.is_authenticated:
-    #     print('yes!')
     serializer = ConditionChangeSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     member_set = list(Member.objects.filter(username=request.user.username))
@@ -133,9 +131,6 @@ def change_location(request, format=None):
                          "Altitude": member.altitude})
 
 
-
-
-
 def find_distance(patient, doctor):
     cos_tetha = sin(patient.latitude) * sin(doctor.latitude) + \
             cos(patient.latitude) * cos(doctor.latitude) * cos(patient.longitude - doctor.longitude)
@@ -149,12 +144,71 @@ def find_distance(patient, doctor):
 def find_doctor(request, format=None):
     patient_qset = Member.objects.filter(username=request.user.username)
     patient = patient_qset.first()
+    if patient.is_doctor == True:
+        return JsonResponse({"Dude?": "..."})
+    patient.set_condition("bad")
     doctors_distance = {}
     doctors_list = list(Member.objects.filter(is_doctor=True))
     for doctor in doctors_list:
         doctors_distance.update({doctor.id: find_distance(patient, doctor)})
 
     sorted_doctors = sorted(doctors_distance.items(), key=operator.itemgetter(1))
-    # ToDO: NOW WE SHOULD CALL THE DOCTORS
+    if len(sorted_doctors) < 10:
+        num_of_call_doctors = len(sorted_doctors)
+    else:
+        num_of_call_doctors = 10
+
+    for doctor_id in sorted_doctors[0:num_of_call_doctors]:
+        doctor_l = list(Member.objects.filter(id=doctor_id[0]))
+        doctor = doctor_l[0]
+        doctor.assigned_member_id = patient.id
+        doctor.save()
+
+    return JsonResponse({"WE ARE CALLING DOCTORS!": "PLEASE WAIT..."}, safe=False)
+
+
+@api_view(['POST'])
+def patient_ok(request, format=None):
+    patient_queryset = Member.objects.filter(username=request.user.username)
+    patient = patient_queryset.first()
+    doctors_list = list(Member.objects.filter(assigned_member_id=patient.id))
+    for doctor in doctors_list:
+        doctor.assigned_member_id = None
+        doctor.save()
+    return JsonResponse({"Doctors assign": "cleaned"})
+
+
+@api_view(['GET'])
+def anyone_dying(request, format=None):
+    doctors = Member.objects.filter(username=request.user.username)
+    doctor = doctors.first()
+    if doctor.is_doctor is False:
+        return JsonResponse({"You are not doctor":"Dude..."})
+    patient_list = list(Member.objects.filter(id=doctor.assigned_member_id))
+    num_patients = len(patient_list)
+    if num_patients != 0:
+        patient = patient_list[0]
+        return JsonResponse({"Patient username": patient.username,
+                             "longitude": patient.longitude,
+                             "latitude": patient.latitude,
+                             "altitude": patient.altitude})
+    else:
+        return JsonResponse({"No one is dying!": "Find new Job"})
+
+
+@api_view(['POST'])
+def i_got_them(request, format=None):
+    doctors = list(Member.objects.filter(username=request.user.username))
+    doctor = doctors[0]
+    patient_id = doctor.assigned_member_id
+    if patient_id is not None:
+        doctors_list = list(Member.objects.filter(assigned_member_id=patient_id))
+        for doctor_t in doctors_list:
+            doctor_t.assigned_member_id = None
+            doctor_t.save()
+        return JsonResponse({"Good Luck": "DOCTOR"})
+    return JsonResponse({"Dude!": "why?"})
+
+
 
 
