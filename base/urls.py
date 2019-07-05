@@ -17,6 +17,7 @@ urlpatterns = [
     path('patient_ok/', views.patient_ok, name="patient-ok"),
     path('anyone_dying/', views.anyone_dying, name="anyone-dying"),
     path('i_got_them/', views.i_got_them, name="i_got_them"),
+    path('doctor_work_is_done/', views.doctor_work_is_done, name="doctor_work_is_done"),
 
 
 

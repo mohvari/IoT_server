@@ -144,19 +144,20 @@ def find_distance(patient, doctor):
 def find_doctor(request, format=None):
     patient_qset = Member.objects.filter(username=request.user.username)
     patient = patient_qset.first()
-    if patient.is_doctor == True:
+    if patient.is_doctor is True:
         return JsonResponse({"Dude?": "..."})
     patient.set_condition("bad")
     doctors_distance = {}
-    doctors_list = list(Member.objects.filter(is_doctor=True))
+    doctors_list = list(Member.objects.filter(is_doctor=True,
+                                              bad_or_busy_condition=False))
     for doctor in doctors_list:
         doctors_distance.update({doctor.id: find_distance(patient, doctor)})
 
     sorted_doctors = sorted(doctors_distance.items(), key=operator.itemgetter(1))
-    if len(sorted_doctors) < 10:
+    if len(sorted_doctors) < 1:  # Todo
         num_of_call_doctors = len(sorted_doctors)
     else:
-        num_of_call_doctors = 10
+        num_of_call_doctors = 1  # Todo
 
     for doctor_id in sorted_doctors[0:num_of_call_doctors]:
         doctor_l = list(Member.objects.filter(id=doctor_id[0]))
@@ -171,10 +172,14 @@ def find_doctor(request, format=None):
 def patient_ok(request, format=None):
     patient_queryset = Member.objects.filter(username=request.user.username)
     patient = patient_queryset.first()
+    if patient.is_doctor is True:
+        return JsonResponse({"Dude?": "You are a doctor"})
     doctors_list = list(Member.objects.filter(assigned_member_id=patient.id))
     for doctor in doctors_list:
         doctor.assigned_member_id = None
         doctor.save()
+    patient.bad_or_busy_condition = False
+    patient.save()
     return JsonResponse({"Doctors assign": "cleaned"})
 
 
@@ -183,8 +188,9 @@ def anyone_dying(request, format=None):
     doctors = Member.objects.filter(username=request.user.username)
     doctor = doctors.first()
     if doctor.is_doctor is False:
-        return JsonResponse({"You are not doctor":"Dude..."})
-    patient_list = list(Member.objects.filter(id=doctor.assigned_member_id))
+        return JsonResponse({"You are not doctor": "Dude..."})
+    patient_list = list(Member.objects.filter(id=doctor.assigned_member_id,
+                                              bad_or_busy_condition=True))
     num_patients = len(patient_list)
     if num_patients != 0:
         patient = patient_list[0]
@@ -206,8 +212,31 @@ def i_got_them(request, format=None):
         for doctor_t in doctors_list:
             doctor_t.assigned_member_id = None
             doctor_t.save()
+        doctor.assigned_member_id = patient_id
+        doctor.bad_or_busy_condition = True
+        doctor.save()
+        patient_l = list(Member.objects.filter(id=patient_id))
+        patient = patient_l[0]
+        patient.assigned_member_id = doctor.id
+        patient.save()
         return JsonResponse({"Good Luck": "DOCTOR"})
     return JsonResponse({"Dude!": "why?"})
+
+
+@api_view(['POST'])
+def doctor_work_is_done(request, format=None): # Patient can call this method
+    patient_queryset = Member.objects.filter(username=request.user.username)
+    patient = patient_queryset.first()
+    if patient.is_doctor is True:
+        return JsonResponse({"Dude?": "You are a doctor"})
+    doctors_list = list(Member.objects.filter(assigned_member_id=patient.id))
+    doctor = doctors_list[0]
+    doctor.assigned_member_id = None
+    doctor.bad_or_busy_condition = False
+    doctor.save()
+    patient.bad_or_busy_condition = False
+    patient.save()
+    return JsonResponse({"Thanks God": "You are alive!"})
 
 
 
